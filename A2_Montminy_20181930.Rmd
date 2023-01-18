@@ -114,7 +114,7 @@ ggplot(pDat, aes(x=Comp.1, y=Comp.2, color=Species))+
   geom_point()
 ```
 
-```{r fig.cap="Figure 2 shows a bivariate plot for the "best" two principal components; component 3 and component 4.  This plot shows the best differentiation between species. The Red data represents the species Carduelis carduelis.  The Yellow data represents the species Erithacus rubecula.  The green data represent the species Parus Major.  The cyan data represents the species Passer domestius.  The blue data represents the species Sturnus vulgaris.  The magenta data represents the species Turdus merula."}
+```{r fig.cap="Figure 2 shows a bivariate plot for the 'best' two principal components; component 3 and component 4.  This plot shows the best differentiation between species. The Red data represents the species Carduelis carduelis.  The Yellow data represents the species Erithacus rubecula.  The green data represent the species Parus Major.  The cyan data represents the species Passer domestius.  The blue data represents the species Sturnus vulgaris.  The magenta data represents the species Turdus merula."}
 Figure2=ggplot(pDat, aes(x=Comp.3,y=Comp.4, colour=Species))+
   geom_point()+
   theme_pub()+
