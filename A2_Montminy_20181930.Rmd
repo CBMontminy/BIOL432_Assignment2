@@ -9,22 +9,128 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+[My GitHub] (https://github.com/CBMontminy/BIOL432_Assignment2.git)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+# Loading packages and theme
+```{r} 
+library(ggplot2)
+library(dplyr)
+library(readr)
+library(gridExtra)
+source("http://bit.ly/theme_pub")
+theme_set(theme_pub())
 ```
 
-## Including Plots
+# Loading data
+## Using read_csv because the file size was too large to import with read.csv
+```{r}
+Data=read_csv("BirdBehaviour.csv")
+```
+# Checking data
+```{r}
+sum(is.na(Data))
+str(Data)
+head(Data)
+```
+## The data looks like it has no anomolies.
 
-You can also embed plots, for example:
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+# Creating plot to visualize behavioral measurements by species
+
+```{r fig.cap="Figure 1 shows time spent performing each behavior for each species.  The Red data represents the species Carduelis carduelis.  The Yellow data represents the species Erithacus rubecula.  The green data represent the species Parus Major.  The cyan data represents the species Passer domestius.  The blue data represents the species Sturnus vulgaris.  The magenta data represents the species Turdus merula."}
+Groom=ggplot(Data, aes(x=Species, y=Groom, fill=Species))+
+  geom_boxplot()+
+  theme_pub()+ labs(y="Time (min)", title=("Time Grooming"))+
+  scale_x_discrete(guide=guide_axis(n.dodge=2))+
+  theme(axis.text.x=element_text(size=6))
+
+Forage=ggplot(Data, aes(x=Species, y=Forage, fill=Species))+
+  geom_boxplot()+
+  theme_pub()+ labs(y="Time (min)", title=("Time Foraging"))+
+  scale_x_discrete(guide=guide_axis(n.dodge=2))+
+  theme(axis.text.x=element_text(size=6))
+
+Mate=ggplot(Data, aes(x=Species, y=Mate, fill=Species))+
+  geom_boxplot()+
+  theme_pub()+ labs(y="Time (min)", title=("Time Mating"))+
+  scale_x_discrete(guide=guide_axis(n.dodge=2))+
+  theme(axis.text.x=element_text(size=6))
+
+Sleep=ggplot(Data, aes(x=Species, y=Sleep, fill=Species))+
+  geom_boxplot()+
+  theme_pub()+ labs(y="Time (min)", title=("Time Sleeping"))+
+  scale_x_discrete(guide=guide_axis(n.dodge=2))+
+  theme(axis.text.x=element_text(size=6))
+
+Figure1=grid.arrange(Groom, Forage, Mate, Sleep, nrow=2)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+# Correlation test
+```{r}
+Behavior=select(Data, "Groom", "Forage", "Mate", "Sleep")
+cor(Behavior)
+```
+Looking at these correlation coefficients we can see that there is little correlation between behaviors.  The closer the values are to 1(or -1), the higher the correlation.  In this case we see the highest correlation is between mating and grooming with a coefficient value of 0.481.
+
+# Scaling variables.
+```{r}
+ZGroom=(Data$Groom-mean(Data$Groom))/sd(Data$Groom)
+ZForage=(Data$Forage-mean(Data$Forage))/sd(Data$Forage)
+ZMate=(Data$Mate-mean(Data$Mate))/sd(Data$Mate)
+ZSleep=(Data$Sleep-mean(Data$Sleep))/sd(Data$Sleep)
+MyData=data.frame(ZGroom, ZForage, ZMate, ZSleep)
+str(MyData)
+```
+I used the z-score to scale my behavioral variables.  I used this method because it normalizes the observations from the species that would have different means and standard deviations. 
+
+# Running Principal Component Analysis
+## Choosing only behavioral data.  Species variables are not numerical so they cannot be run in this analysis.  
+
+```{r}
+PCA=princomp(MyData, cor=F)
+```
+Cor=F uses the covariance matrix instead of the correlation matrix because the variables are normalized/on the same scale. It was already scaled so we don't need princomp to scale it again.
+
+```{r}
+names(PCA)
+```
+The names() function outputs a vector of the variable names.  It is a list of the variables of the object inputted to the function.  
+
+The loadings slice contains the eigenvectors 
+
+The score slice contains the principal components
+
+# Combining original dataset with PC vectors
+
+```{r}
+pDat=cbind(MyData, PCA$scores)
+pDat$Species=Data$Species
+pDat
+```
+
+# Plotting Components
+```{r}
+ggplot(pDat, aes(x=Comp.1, y=Comp.2, color=Species))+
+  geom_point()
+```
+
+```{r fig.cap="Figure 2 shows a bivariate plot for the "best" two principal components; component 3 and component 4.  This plot shows the best differentiation between species. The Red data represents the species Carduelis carduelis.  The Yellow data represents the species Erithacus rubecula.  The green data represent the species Parus Major.  The cyan data represents the species Passer domestius.  The blue data represents the species Sturnus vulgaris.  The magenta data represents the species Turdus merula."}
+Figure2=ggplot(pDat, aes(x=Comp.3,y=Comp.4, colour=Species))+
+  geom_point()+
+  theme_pub()+
+  theme(legend.position="right")+
+  labs(title="Figure 2", x="Component 3", y="Component 4")
+Figure2
+```
+
+PCs 3 and 4 are the "best" in this case because the variance between species is more apparent.  There is still some overlap between species, but not as much as components 1 and 2. Component 4 accounts for the most variance and is the most capable of differentiating between species.
+
+# Showing eigenvectors with loadings
+```{r}
+PCA$loadings
+```
+The eigenvector loadings show the varience contributed by each component.  Component 3 contributes to 38.3% of the grooming variance, 51.8% of the foraging variance, 38.9% of the mating variance, and 65.9% of the sleeping variance.  Component 4 contributes to 70.2% of the grooming variance, 11.4% of the foraging variance, and -69.8% of the mating variance, meaning it has negative correlation.  There is no loading for component 4 for the sleeping behavioral data.  Because the loadings are so high for grooming and mating, we can conclude that these two behaviors are more correlated than the others.  
+
+Given that components 3 and 4 are able to differentiate between the species the most based on the grooming and sleeping behaviors, it is clear that the 6 species differ the most in these behaviors.  The other behaviors seem to have less of an impact on the variance between species, so they must not be as different.  
+
+I would argue that the Cardeulis cardeulis is the "best" bird species based on its split of time spent between behaviors.  The C. cardeulis spends relatively little time sleeping (roughly "tied" for lowest average time spent sleeping).  I perceive this as being beneficial becuase time spent sleeping is typically unproductive time.  As I said, however, a couple other species had low sleeping times.  To bring the C. cardeulis ahead of those other species is the time spent mating and grooming.  The C. cardeulis does not spend a lot of time grooming like the Parus major or Tardus merule but still has an extremely high time spent mating, indicating that individuals likely reproduce a lot.  
