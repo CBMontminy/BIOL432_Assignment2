@@ -65,6 +65,8 @@ Sleep=ggplot(Data, aes(x=Species, y=Sleep, fill=Species))+
 Figure1=grid.arrange(Groom, Forage, Mate, Sleep, nrow=2)
 ```
 
+
+
 # Correlation test
 ```{r}
 Behavior=select(Data, "Groom", "Forage", "Mate", "Sleep")
@@ -105,7 +107,7 @@ The score slice contains the principal components
 ```{r}
 pDat=cbind(MyData, PCA$scores)
 pDat$Species=Data$Species
-pDat
+head(pDat)
 ```
 
 # Plotting Components
